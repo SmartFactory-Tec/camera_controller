@@ -7,7 +7,8 @@ import re
 
 class Camera:
     def __init__(self, ip: str, port: int, user: str, password: str):
-        self.__onvif_camera = ONVIFCamera(ip, port, user, password, abspath('venv/lib/python3.10/site-packages/wsdl/'))
+        self.__onvif_camera = ONVIFCamera(ip, port, user, password, abspath(
+            './venv/lib/python3.10/site-packages/wsdl/'))
 
         self.__media = self.__onvif_camera.create_media_service()
         self.__ptz = self.__onvif_camera.create_ptz_service()
