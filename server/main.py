@@ -3,7 +3,9 @@ from Camera import Camera
 from CameraController import CameraController
 from PersonDetector import PersonDetector
 from dotenv import dotenv_values
+from flask import Flask
 
+app = Flask(__name__)
 
 def calculate_target_position(boxes, weights):
     if len(boxes) == 0 or len(weights) == 0:
