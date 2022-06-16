@@ -3,7 +3,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,node,venv,dotenv,pycharm+all
 
 ### dotenv ###
-.env
+server/.env
 
 ### Node ###
 # Logs
