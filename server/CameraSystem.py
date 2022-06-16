@@ -2,9 +2,9 @@ import cv2
 from threading import Thread, Lock
 from typing import TypedDict
 from Camera import Camera
-from server.CameraController import CameraController
-from server.PersonDetector import PersonDetector
-from server.utils import draw_detection_boxes, calculate_target_position
+from CameraController import CameraController
+from PersonDetector import PersonDetector
+from utils import draw_detection_boxes, calculate_target_position
 from copy import deepcopy
 
 
