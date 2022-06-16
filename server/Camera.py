@@ -49,7 +49,7 @@ class Camera:
                 with self.__frame_lock:
                     self.__frame_c = frame
 
-    def read_frame(self):
+    def get_latest_frame(self):
         with self.__frame_lock:
             return self.__frame_c
 
@@ -74,6 +74,10 @@ class Camera:
     def set_speed(self, pan: float, tilt: float):
         request = self.__ptz.create_type('ContinuousMove')
         request.ProfileToken = self.__media_profile.token
+        pan = pan if pan < 1 else 1
+        pan = pan if pan > -1 else -1
+        tilt = tilt if tilt < 1 else 1
+        tilt = tilt if tilt > -1 else -1
         request.Velocity = {
             'PanTilt': {
                 'x': pan,

@@ -1,4 +1,5 @@
-from threading import Event, Thread
+from copy import deepcopy
+from threading import Event, Thread, Lock
 from time import time_ns
 from Camera import Camera
 
@@ -29,30 +30,43 @@ class CameraController:
         x_prev = 0
         y_int = 0
         y_prev = 0
-        prev_exec = time_ns()
+        prev_x_exec = time_ns()
+        prev_y_exec = time_ns()
         while not self.__stop_flag.is_set():
-            timestep = time_ns() - prev_exec
+            x_timestep = time_ns() - prev_x_exec
 
-            x_int += self.__x_error * timestep / 1_000_000_000
-            x_delta = (self.__x_error - x_prev) * 1_000_000_000 / timestep
+            x_int += self.__x_error * x_timestep / 1_000_000_000
+            x_delta = (self.__x_error - x_prev) * 1_000_000_000 / x_timestep
 
-            y_int += self.__y_error * timestep / 1_000_000_000
-            y_delta = (self.__y_error - y_prev) * 1_000_000_000 / timestep
 
             x_correction = self.__x_error * self.__x_pid[0] \
                                 + x_int * self.__x_pid[1] \
                                 + x_delta * self.__x_pid[2]
 
+
+
+            x_prev = self.__x_error
+            y_prev = self.__y_error
+
+            prev_x_exec = time_ns()
+            if abs(x_correction) > self.__x_deadzone:
+                self.__camera.set_speed(x_correction, 0)
+                prev_y_exec = time_ns()
+                continue
+
+            # Start counting time for y only when X has minimal error
+            y_timestep = time_ns() - prev_y_exec
+
+            y_int += self.__y_error * y_timestep / 1_000_000_000
+            y_delta = (self.__y_error - y_prev) * 1_000_000_000 / y_timestep
+
             y_correction = self.__y_error * self.__y_pid[0] \
                            + y_int * self.__y_pid[1] \
                            + y_delta * self.__y_pid[2]
 
-            x_prev = self.__x_error
-            y_prev = self.__y_error
-            prev_exec = time_ns()
-            if abs(x_correction) > self.__x_deadzone:
-                self.__camera.set_speed(x_correction, 0)
-            elif abs(y_correction) > self.__y_deadzone:
+            prev_y_exec = time_ns()
+
+            if abs(y_correction) > self.__y_deadzone:
                 self.__camera.set_speed(0, y_correction)
             else:
                 self.__camera.stop_movement()
