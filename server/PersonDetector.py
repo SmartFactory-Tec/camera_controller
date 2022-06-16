@@ -14,6 +14,7 @@ class PersonDetector:
         self.__stop_flag = Event()
         self.__model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
         self.__thread = Thread(target=self.__update)
+        self.__thread.daemon = True
         self.__thread.start()
 
     def stop(self):
@@ -27,7 +28,7 @@ class PersonDetector:
 
     def __update(self):
         data = local()
-        while not self.__stop_flag.is_set():
+        while True:
             with self.__lock:
                 if self.__latest_frame is None: continue
                 data.frame = self.__latest_frame

@@ -26,6 +26,7 @@ class CameraSystem():
         self.__detections_lock = Lock()
 
         self.__thread = Thread(target=self.__update)
+        self.__thread.daemon = True
         self.__thread.start()
 
     def __async_init(self):

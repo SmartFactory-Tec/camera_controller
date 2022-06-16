@@ -13,6 +13,7 @@ class Camera:
         self.__media = self.__onvif_camera.create_media_service()
         self.__ptz = self.__onvif_camera.create_ptz_service()
         self.__media_profile = self.__media.GetProfiles()[0]
+        self.__initialized_flag = Event()
 
         uri_request = self.__media.create_type('GetStreamUri')
         uri_request.StreamSetup = {
@@ -36,6 +37,7 @@ class Camera:
         self.__stop_flag = Event()
 
         self.__cam_thread = Thread(target=self.__reader)
+        self.__cam_thread.daemon = True
         self.__cam_thread.start()
 
     def stop(self):
@@ -43,13 +45,15 @@ class Camera:
         self.__cam_thread.join()
 
     def __reader(self):
-        while not self.__stop_flag.is_set():
+        while True:
             ret, frame = self.__stream.read()
             if ret:
                 with self.__frame_lock:
+                    self.__initialized_flag.set()
                     self.__frame_c = frame
 
     def get_latest_frame(self):
+        self.__initialized_flag.wait()
         with self.__frame_lock:
             return self.__frame_c
 
