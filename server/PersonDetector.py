@@ -23,7 +23,7 @@ class PersonDetector:
     def get_detections(self, frame):
         with self.__lock:
             self.__latest_frame = frame
-            return deepcopy(self.__boxes_c, self.__weights_c)
+            return ([deepcopy(box) for box in self.__boxes_c], [deepcopy(weight) for weight in self.__weights_c])
 
     def __update(self):
         data = local()

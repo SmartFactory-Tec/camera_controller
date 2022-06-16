@@ -1,4 +1,3 @@
-from copy import deepcopy
 from threading import Event, Thread, Lock
 from time import time_ns
 from Camera import Camera

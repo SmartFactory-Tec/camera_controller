@@ -1,12 +1,6 @@
 import cv2
-from threading import Thread
-from Camera import Camera
-from CameraController import CameraController
-from PersonDetector import PersonDetector
 from dotenv import dotenv_values
-from PIL import Image
 from flask import Flask, Response
-from io import BytesIO
 from os.path import abspath
 from CameraSystem import SystemConfig, CameraSystem
 
