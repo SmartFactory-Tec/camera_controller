@@ -36,21 +36,22 @@ class Camera:
         self.__frame_lock = Lock()
         self.__stop_flag = Event()
 
-        self.__cam_thread = Thread(target=self.__reader)
-        self.__cam_thread.daemon = True
-        self.__cam_thread.start()
+        self.__thread = Thread(target=self.__update)
+        self.__thread.start()
 
     def stop(self):
         self.__stop_flag.set()
-        self.__cam_thread.join()
+        self.__thread.join()
 
-    def __reader(self):
+    def __update(self):
         while True:
+            if self.__stop_flag.is_set():
+                break
             ret, frame = self.__stream.read()
             if ret:
                 with self.__frame_lock:
-                    self.__initialized_flag.set()
                     self.__frame_c = frame
+                    self.__initialized_flag.set()
 
     def get_latest_frame(self):
         self.__initialized_flag.wait()

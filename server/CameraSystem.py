@@ -1,5 +1,5 @@
 import cv2
-from threading import Thread, Lock
+from threading import Thread, Lock, Event
 from typing import TypedDict
 from Camera import Camera
 from CameraController import CameraController
@@ -9,6 +9,7 @@ from copy import deepcopy
 
 
 class SystemConfig(TypedDict):
+    image_scale: float
     address: str
     port: int
     user: str
@@ -17,25 +18,38 @@ class SystemConfig(TypedDict):
     pid_y: tuple[float, float, float]
 
 class CameraSystem():
-    def __init__(self, camera_config: SystemConfig):
-        self.__camera_config = camera_config
+    def __init__(self, system_config: SystemConfig):
+        self.__system_config = system_config
         self.__latest_frame = None
         self.__latest_detections = []
+
+        self.__stop_flag = Event()
 
         self.__frame_lock = Lock()
         self.__detections_lock = Lock()
 
         self.__thread = Thread(target=self.__update)
-        self.__thread.daemon = True
         self.__thread.start()
 
+    def stop(self):
+        self.__stop_flag.set()
+        self.__thread.join()
+        print("Stopped cam sys")
+
+        self.__camera.stop()
+        print("stopped cam")
+        self.__controller.stop()
+        print("stopped controller")
+        self.__detector.stop()
+        print("stopped detector")
+
     def __async_init(self):
-        address = self.__camera_config["address"]
-        port = self.__camera_config["port"]
-        user = self.__camera_config["user"]
-        password = self.__camera_config["password"]
-        pid_x  = self.__camera_config["pid_x"]
-        pid_y  = self.__camera_config["pid_y"]
+        address = self.__system_config["address"]
+        port = self.__system_config["port"]
+        user = self.__system_config["user"]
+        password = self.__system_config["password"]
+        pid_x  = self.__system_config["pid_x"]
+        pid_y  = self.__system_config["pid_y"]
         self.__camera = Camera(address, port, user, password)
         self.__controller = CameraController(self.__camera, pid_x, pid_y)
         self.__detector = PersonDetector()
@@ -44,13 +58,16 @@ class CameraSystem():
         self.__async_init()
 
         while True:
+            if self.__stop_flag.is_set():
+                break
+
             frame = self.__camera.get_latest_frame()
 
             if frame is None: continue
 
             frame = frame.copy()
 
-            scale = 0.4
+            scale = self.__system_config["image_scale"]
             resized_frame = cv2.resize(frame, dsize=(int(frame.shape[1] * scale), int(frame.shape[0] * scale)),
                                        interpolation=cv2.INTER_AREA)
 

@@ -7,14 +7,22 @@ class CameraController:
     def __init__(self, camera: Camera, x_pid: tuple[float, float, float], y_pid: tuple[float, float, float], x_deadzone = 0.2, y_deadzone = 0.2):
         self.__x_error = 0
         self.__y_error = 0
+
         self.__camera = camera
+
         self.__x_pid = x_pid
         self.__y_pid = y_pid
         self.__x_deadzone = x_deadzone
         self.__y_deadzone = y_deadzone
+
+        self.__stop_flag = Event()
+
         self.__thread = Thread(target=self.__update)
-        self.__thread.daemon = True
         self.__thread.start()
+
+    def stop(self):
+        self.__stop_flag.set()
+        self.__thread.join()
 
     def set_error(self, x_error, y_error):
         self.__x_error = x_error
@@ -28,6 +36,8 @@ class CameraController:
         prev_x_exec = time_ns()
         prev_y_exec = time_ns()
         while True:
+            if self.__stop_flag.is_set():
+                break
             x_timestep = time_ns() - prev_x_exec
 
             if x_timestep == 0: continue
