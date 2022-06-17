@@ -34,7 +34,6 @@ cams = [
 ]
 
 signal.signal(signal.SIGINT, handle_kb_interrupt)
-signal.signal(signal.SIGHUP, handle_kb_interrupt)
 
 @app.route('/')
 def home():
