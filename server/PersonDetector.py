@@ -14,7 +14,7 @@ class PersonDetector:
         self.__lock = Lock()
         self.__stop_flag = Event()
 
-        self.__model = torch.hub.load('ultralytics/yolov5', 'yolov5m', pretrained=True)
+        self.__model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 
         self.__thread = Thread(target=self.__update)
         self.__thread.start()
