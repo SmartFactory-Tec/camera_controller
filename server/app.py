@@ -20,7 +20,7 @@ def generate_responses(frame_function):
 app = Flask("server")
 
 config = dotenv_values(".env")
-pid_x = (0.45, 0.01, 0.01)
+pid_x = (0.45, 0.01, 0.05)
 pid_y = (0.3, 0.01, 0)
 cams = [
     CameraSystem({'image_scale': float(config["IMAGE_SCALE"]), 'address': config["CAM1"], 'port': config["CAM1_PORT"], 'user': config["CAM1_USER"],
