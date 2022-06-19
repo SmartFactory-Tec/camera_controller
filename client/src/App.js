@@ -1,25 +1,24 @@
-import logo from './logo.svg';
 import './App.css';
+import {Header, Main, Nav, Anchor, Sidebar, Box, Page, Image, Grid, Video, ResponsiveContext} from "grommet";
+import * as Icons from 'grommet-icons'
+import {Link} from "react-router-dom";
+import {PageHeader} from "grommet/components";
+import Cameras from "./components/Cameras";
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    return (<Box direction='row' height='100vh'>
+        <Sidebar background="brand"
+                 header={<Icons.Video/>} pad={{horizontal: 'medium', vertical: 'large'}}>
+        </Sidebar>
+        <Main pad='large'>
+            <Page>
+                <PageHeader
+                    title='Video de seguridad en vivo'
+                    subtitle="Sistema de Camaras de Smart Factory"/>
+                <Cameras/>
+            </Page>
+        </Main>
+    </Box>);
 }
 
 export default App;
