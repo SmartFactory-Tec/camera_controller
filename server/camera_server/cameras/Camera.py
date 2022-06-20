@@ -6,54 +6,56 @@ import re
 
 
 class Camera:
-    def __init__(self, ip: str, port: int, user: str, password: str):
-        self.__onvif_camera = ONVIFCamera(ip, port, user, password)
+    def __init__(self, address: str | None = None, port: int | None = None, user: str | None = None,
+                 password: str | None = None, id: int | None = None):
+        if id is not None:
+            self.__stream = cv2.VideoCapture()
+            self.__onvif_camera = None
+        else:
+            self.__onvif_camera = ONVIFCamera(address, port, user, password)
 
-        self.__media = self.__onvif_camera.create_media_service()
-        self.__ptz = self.__onvif_camera.create_ptz_service()
-        self.__media_profile = self.__media.GetProfiles()[0]
-        self.__initialized_flag = Event()
+            self.__media = self.__onvif_camera.create_media_service()
+            self.__ptz = self.__onvif_camera.create_ptz_service()
+            self.__media_profile = self.__media.GetProfiles()[0]
 
-        uri_request = self.__media.create_type('GetStreamUri')
-        uri_request.StreamSetup = {
-            'Stream': 'RTP-Multicast',
-            'Transport': {
-                'Protocol': 'TCP'
+            uri_request = self.__media.create_type('GetStreamUri')
+            uri_request.StreamSetup = {
+                'Stream': 'RTP-Multicast',
+                'Transport': {
+                    'Protocol': 'TCP'
+                }
             }
-        }
-        uri_request.ProfileToken = self.__media_profile.token
+            uri_request.ProfileToken = self.__media_profile.token
 
-        stream_uri = self.__media.GetStreamUri(uri_request).Uri
+            stream_uri = self.__media.GetStreamUri(uri_request).Uri
 
-        uri_front = re.search(r'://(.*)', stream_uri).groups()[0]
+            uri_front = re.search(r'://(.*)', stream_uri).groups()[0]
 
-        # Add the user and password for the stream
-        self.__stream_uri = 'rtsp://' + user + ':' + password + '@' + uri_front
+            # Add the user and password for the stream
+            self.__stream_uri = 'rtsp://' + user + ':' + password + '@' + uri_front
 
-        self.__stream = cv2.VideoCapture(self.__stream_uri)
+            self.__stream = cv2.VideoCapture(self.__stream_uri)
 
+        self.__is_ready_flag = Event()
         self.__frame_lock = Lock()
-        self.__stop_flag = Event()
 
         self.__thread = Thread(target=self.__update)
+        self.__thread.daemon = True
         self.__thread.start()
-
-    def stop(self):
-        self.__stop_flag.set()
-        self.__thread.join()
 
     def __update(self):
         while True:
-            if self.__stop_flag.is_set():
-                break
             ret, frame = self.__stream.read()
             if ret:
                 with self.__frame_lock:
                     self.__frame_c = frame
-                    self.__initialized_flag.set()
+                    self.__is_ready_flag.set()
+
+    def is_ready(self):
+        return self.__is_ready_flag.is_set()
 
     def get_latest_frame(self):
-        self.__initialized_flag.wait()
+        self.__is_ready_flag.wait()
         with self.__frame_lock:
             return self.__frame_c
 

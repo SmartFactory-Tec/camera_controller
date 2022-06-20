@@ -1,73 +1,66 @@
 import cv2
 from threading import Thread, Lock, Event
 from typing import TypedDict
-from Camera import Camera
-from CameraController import CameraController
-from PersonDetector import PersonDetector
-from utility import draw_detection_boxes, calculate_target_position
 from copy import deepcopy
+from camera_server.cameras import Camera
+from camera_server.cameras.CameraController import CameraController
+from camera_server.cameras.PersonDetector import PersonDetector
+from camera_server.cameras.utility import draw_detection_boxes, calculate_target_position
 
-
-class SystemConfig(TypedDict):
-    image_scale: float
-    address: str
-    port: int
-    user: str
-    password: str
-    pid_x: tuple[float, float, float]
-    pid_y: tuple[float, float, float]
 
 class CameraSystem():
-    def __init__(self, system_config: SystemConfig):
-        self.__system_config = system_config
+    def __init__(self, pid_x: tuple[float, float, float],
+                 pid_y: tuple[float, float, float], image_scale: float, controllable: bool, id: int | None = None,
+                 address: str | None = None, port: int | None = None, user: str | None = None,
+                 password: str | None = None):
+
+        self.__id = id
+
+        self.__address = address
+        self.__port = port
+        self.__user = user
+        self.__password = password
+        self.__pid_x = pid_x
+        self.__pid_y = pid_y
+        self.__image_scale = image_scale
+        self.__controllable = controllable
+
         self.__latest_frame = None
         self.__latest_detections = []
-
-        self.__stop_flag = Event()
 
         self.__frame_lock = Lock()
         self.__detections_lock = Lock()
 
+        self.__is_ready_flag = Event()
+
         self.__thread = Thread(target=self.__update)
+        self.__thread.daemon = True
         self.__thread.start()
 
-    def stop(self):
-        self.__stop_flag.set()
-        self.__thread.join()
-        print("Stopped cam sys")
-
-        self.__camera.stop()
-        print("stopped cam")
-        self.__controller.stop()
-        print("stopped controller")
-        self.__detector.stop()
-        print("stopped detector")
-
     def __async_init(self):
-        address = self.__system_config["address"]
-        port = self.__system_config["port"]
-        user = self.__system_config["user"]
-        password = self.__system_config["password"]
-        pid_x  = self.__system_config["pid_x"]
-        pid_y  = self.__system_config["pid_y"]
-        self.__camera = Camera(address, port, user, password)
-        self.__controller = CameraController(self.__camera, pid_x, pid_y)
+        if self.__id is not None:
+            self.__camera = Camera(id=self.__id)
+        else:
+            self.__camera = Camera(address=self.__address, port=self.__port, user=self.__user, password=self.__password)
+
+        if self.__controllable:
+            self.__controller = CameraController(self.__camera, self.__pid_x, self.__pid_y)
+
         self.__detector = PersonDetector()
+
+        self.__is_ready_flag.set()
 
     def __update(self):
         self.__async_init()
 
         while True:
-            if self.__stop_flag.is_set():
-                break
-
             frame = self.__camera.get_latest_frame()
 
             if frame is None: continue
 
             frame = frame.copy()
 
-            scale = self.__system_config["image_scale"]
+            scale = self.__image_scale
             resized_frame = cv2.resize(frame, dsize=(int(frame.shape[1] * scale), int(frame.shape[0] * scale)),
                                        interpolation=cv2.INTER_AREA)
 
@@ -92,7 +85,8 @@ class CameraSystem():
                 x_error = 2 * (focus_x - (frame.shape[1] / 2)) / frame.shape[1]
                 y_error = 2 * ((frame.shape[0] / 2) - focus_y) / frame.shape[0]
 
-            self.__controller.set_error(x_error, y_error)
+            if self.__controllable:
+                self.__controller.set_error(x_error, y_error)
 
             with self.__detections_lock:
                 self.__latest_detections = zip(boxes, weights)
@@ -101,12 +95,15 @@ class CameraSystem():
                 self.__latest_frame = frame
 
     def get_latest_frame(self):
+        if not self.__is_ready_flag.is_set(): return None
         return self.__camera.get_latest_frame()
 
     def get_latest_detections(self):
+        if not self.__is_ready_flag.is_set(): return None
         with self.__detections_lock:
             return self.__latest_detections
 
     def get_latest_detections_frame(self):
+        if not self.__is_ready_flag.is_set(): return None
         with self.__frame_lock:
             return self.__latest_frame
