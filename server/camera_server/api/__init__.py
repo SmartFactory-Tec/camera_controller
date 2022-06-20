@@ -2,10 +2,10 @@ import cv2
 import signal
 import atexit
 from flask import Blueprint, g, Response, jsonify
-from camera_server.cameras.Camera import Camera
-from camera_server.cameras.CameraSystem import CameraSystem
+from camera_server.api.Camera import Camera
+from camera_server.api.CameraSystem import CameraSystem
 
-bp = Blueprint('camera', __name__)
+bp = Blueprint('camera', __name__, url_prefix='/api')
 
 cameras = {}
 
@@ -30,6 +30,7 @@ def initialize_cameras(setup_state):
         pid_x = cam["pid_x"] if "pid_x" in cam else default["pid_x"]
         pid_y = cam["pid_y"] if "pid_y" in cam else default["pid_y"]
         scale = cam["scale"] if "scale" in cam else default["scale"]
+        enable_detection = cam["enable_detection"] if "enable_detection" in cam else default["enable_detection"]
 
         pid_x = (float(pid_x["p"]), float(pid_x["i"]), float(pid_x["d"]))
         pid_y = (float(pid_y["p"]), float(pid_y["i"]), float(pid_y["d"]))
@@ -38,6 +39,10 @@ def initialize_cameras(setup_state):
             camera_id = cam['id']
             cameras[slug] = {
                 'name': name,
+                'detection_enabled': enable_detection,
+                'pid_x': pid_x,
+                'pid_y': pid_y,
+                'controllable': controllable,
                 'system': CameraSystem(pid_x=pid_x, pid_y=pid_y, image_scale=scale, id=camera_id,
                                        controllable=controllable),
             }
@@ -48,14 +53,17 @@ def initialize_cameras(setup_state):
             port = cam["port"]
             cameras[slug] = {
                 'name': name,
+                'detection_enabled': enable_detection,
+                'pid_x': pid_x,
+                'pid_y': pid_y,
+                'controllable': controllable,
                 'system': CameraSystem(user=user, password=password, address=address, port=port, image_scale=scale,
-                                       pid_x=pid_x,
-                                       pid_y=pid_y, controllable=controllable),
+                                       pid_x=pid_x, pid_y=pid_y, controllable=controllable,
+                                       enable_detection=enable_detection),
             }
 
-
 @bp.route('/cameras')
-def home():
+def camera_listing():
     camera_listing = []
     for slug, cam in cameras.items():
         camera_listing.append({
@@ -63,6 +71,19 @@ def home():
             'slug': slug,
         })
     return jsonify(camera_listing)
+
+@bp.route('/camera/<camera_id>')
+def camera_info(camera_id):
+    try:
+        camera = cameras[camera_id]
+        camera_info = {
+            'slug': camera_id,
+            'name': camera['name'],
+            'detection_enabled': camera['detection_enabled'],
+        }
+        return jsonify(camera_info)
+    except KeyError:
+        return Response("Camera not found", status=404)
 
 
 @bp.route('/camera/<camera_id>/video_feed')
@@ -83,7 +104,7 @@ def video_feed(camera_id):
 
 
 @bp.route('/camera/<camera_id>/detections/video_feed')
-def people_video_feed(camera_id):
+def detections_video_feed(camera_id):
     try:
         camera = cameras[camera_id]
 
@@ -97,3 +118,5 @@ def people_video_feed(camera_id):
 
     except KeyError:
         return Response("Camera not found", status=404)
+    except RuntimeError:
+        return Response("Detector for this camera disabled", status=404)

@@ -1,6 +1,6 @@
 from threading import Event, Thread, Lock
 from time import time_ns
-from camera_server.cameras import Camera
+from camera_server.api import Camera
 
 
 class CameraController:

@@ -23,9 +23,9 @@ def create_app():
 
     app.config.update(settings)
 
-    import camera_server.cameras
+    import camera_server.api
 
-    app.register_blueprint(cameras.bp)
+    app.register_blueprint(api.bp)
 
     return app
 
