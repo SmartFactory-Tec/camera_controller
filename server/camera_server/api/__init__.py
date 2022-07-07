@@ -86,19 +86,46 @@ def camera_info(camera_id):
     except KeyError:
         return Response("Camera not found", status=404)
 
+def video_feed_resizer(get_latest_frame, resolution_key):
+    switch = {
+        '144': (256, 144),
+        '240': (426, 240),
+        '360': (640, 360),
+        '480': (854, 480),
+        '720': (1280, 720),
+        '1080': (1920, 1080)
+    }
+
+    resolution = switch.get(resolution_key, None)
+
+    if resolution is None:
+        return None
+    else:
+        return lambda : cv2.resize(get_latest_frame(), dsize=resolution,
+                           interpolation=cv2.INTER_AREA)
 
 @bp.route('/camera/<camera_id>/video_feed')
 def video_feed(camera_id):
     try:
         camera = cameras[camera_id]
 
-        latest_frame = camera['system'].get_latest_frame()
+        args = request.args
 
-        if latest_frame is None:
-            return Response(status=503)
+        resolution_key = args.get('res', '480')
 
-        return Response(generate_responses(cameras[camera_id]['system'].get_latest_frame),
+        resizer = video_feed_resizer(cameras[camera_id]['system'].get_latest_frame, resolution_key)
+
+        if (resizer is None):
+            return Response("Bad resolution", status=400)
+
+        latest_detections = camera['system'].get_latest_frame()
+
+        if latest_detections is None:
+            return Response("Camera not ready", status=503)
+
+        return Response(generate_responses(resizer),
                         mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
     except KeyError:
         return Response("Camera not found", status=404)
@@ -113,28 +140,17 @@ def detections_video_feed(camera_id):
 
         resolution_key = args.get('res', '480')
 
-        switch = {
-            '144': (256, 144),
-            '240': (426, 240),
-            '360': (640, 360),
-            '480': (854, 480),
-            '720': (1280, 720),
-            '1080': (1920, 1080)
-        }
+        resizer = video_feed_resizer(cameras[camera_id]['system'].get_latest_detections_frame, resolution_key)
 
-        resolution = switch.get(resolution_key, None)
-
-        if (resolution is None):
+        if (resizer is None):
             return Response(status=400)
-
-
 
         latest_detections = camera['system'].get_latest_detections_frame()
 
         if latest_detections is None:
-            return Response(status=503)
+            return Response("Camera not ready", status=503)
 
-        return Response(generate_responses(lambda : cv2.resize(cameras[camera_id]['system'].get_latest_detections_frame(), dsize=resolution, interpolation=cv2.INTER_AREA) ),
+        return Response(generate_responses(resizer),
                         mimetype='multipart/x-mixed-replace; boundary=frame')
 
     except KeyError:
