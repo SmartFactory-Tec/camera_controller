@@ -1,6 +1,6 @@
 from onvif import ONVIFCamera
 from os.path import abspath
-from threading import Thread, Lock, Event
+from threading import Thread, Lock, Event, Condition
 import cv2
 import re
 
@@ -9,7 +9,7 @@ class Camera:
     def __init__(self, address: str | None = None, port: int | None = None, user: str | None = None,
                  password: str | None = None, id: int | None = None):
         if id is not None:
-            self.__stream = cv2.VideoCapture()
+            self.__stream = cv2.VideoCapture(id)
             self.__onvif_camera = None
         else:
             self.__onvif_camera = ONVIFCamera(address, port, user, password)
@@ -36,8 +36,9 @@ class Camera:
 
             self.__stream = cv2.VideoCapture(self.__stream_uri)
 
-        self.__is_ready_flag = Event()
         self.__frame_lock = Lock()
+        self.__frame_requested_event = Event()
+        self.__frame_available_condition = Condition()
 
         self.__thread = Thread(target=self.__update)
         self.__thread.daemon = True
@@ -45,18 +46,19 @@ class Camera:
 
     def __update(self):
         while True:
-            ret, frame = self.__stream.read()
-            if ret:
-                with self.__frame_lock:
-                    self.__frame_c = frame
-                    self.__is_ready_flag.set()
-
-    def is_ready(self):
-        return self.__is_ready_flag.is_set()
+            self.__stream.grab()
+            if self.__frame_requested_event.is_set():
+                ret, frame = self.__stream.retrieve()
+                if ret:
+                    with self.__frame_available_condition:
+                        self.__frame_c = frame
+                        self.__frame_requested_event.clear()
+                        self.__frame_available_condition.notify_all()
 
     def get_latest_frame(self):
-        self.__is_ready_flag.wait()
-        with self.__frame_lock:
+        self.__frame_requested_event.set()
+        with self.__frame_available_condition:
+            self.__frame_available_condition.wait()
             return self.__frame_c
 
     def move(self, pan_offset: float, tilt_offset: float):

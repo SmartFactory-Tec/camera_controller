@@ -4,6 +4,7 @@ import atexit
 from flask import Blueprint, g, Response, jsonify
 from camera_server.api.Camera import Camera
 from camera_server.api.CameraSystem import CameraSystem
+from camera_server.api.PersonDetector import PersonDetector
 
 bp = Blueprint('camera', __name__, url_prefix='/api')
 
@@ -23,17 +24,20 @@ def initialize_cameras(setup_state):
 
     default = config["cameras"]["default"]
 
+    detector = PersonDetector()
+
     for slug, cam in config["cameras"].items():
         if slug == 'default': continue
         name = cam["name"]
         controllable = cam["controllable"] if "controllable" in cam else default["controllable"]
         pid_x = cam["pid_x"] if "pid_x" in cam else default["pid_x"]
         pid_y = cam["pid_y"] if "pid_y" in cam else default["pid_y"]
-        scale = cam["scale"] if "scale" in cam else default["scale"]
         enable_detection = cam["enable_detection"] if "enable_detection" in cam else default["enable_detection"]
 
         pid_x = (float(pid_x["p"]), float(pid_x["i"]), float(pid_x["d"]))
         pid_y = (float(pid_y["p"]), float(pid_y["i"]), float(pid_y["d"]))
+
+
 
         if 'id' in cam:
             camera_id = cam['id']
@@ -43,8 +47,8 @@ def initialize_cameras(setup_state):
                 'pid_x': pid_x,
                 'pid_y': pid_y,
                 'controllable': controllable,
-                'system': CameraSystem(pid_x=pid_x, pid_y=pid_y, image_scale=scale, id=camera_id,
-                                       controllable=controllable),
+                'system': CameraSystem(pid_x=pid_x, pid_y=pid_y, id=camera_id,
+                                       controllable=controllable, detector=detector),
             }
         else:
             user = cam["user"]
@@ -57,9 +61,9 @@ def initialize_cameras(setup_state):
                 'pid_x': pid_x,
                 'pid_y': pid_y,
                 'controllable': controllable,
-                'system': CameraSystem(user=user, password=password, address=address, port=port, image_scale=scale,
+                'system': CameraSystem(user=user, password=password, address=address, port=port,
                                        pid_x=pid_x, pid_y=pid_y, controllable=controllable,
-                                       enable_detection=enable_detection),
+                                       detector=detector),
             }
 
 @bp.route('/cameras')
