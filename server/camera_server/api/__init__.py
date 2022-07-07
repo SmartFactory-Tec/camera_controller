@@ -1,7 +1,7 @@
 import cv2
 import signal
 import atexit
-from flask import Blueprint, g, Response, jsonify
+from flask import Blueprint, g, Response, jsonify, request
 from camera_server.api.Camera import Camera
 from camera_server.api.CameraSystem import CameraSystem
 from camera_server.api.PersonDetector import PersonDetector
@@ -32,7 +32,6 @@ def initialize_cameras(setup_state):
         controllable = cam["controllable"] if "controllable" in cam else default["controllable"]
         pid_x = cam["pid_x"] if "pid_x" in cam else default["pid_x"]
         pid_y = cam["pid_y"] if "pid_y" in cam else default["pid_y"]
-        enable_detection = cam["enable_detection"] if "enable_detection" in cam else default["enable_detection"]
 
         pid_x = (float(pid_x["p"]), float(pid_x["i"]), float(pid_x["d"]))
         pid_y = (float(pid_y["p"]), float(pid_y["i"]), float(pid_y["d"]))
@@ -43,7 +42,6 @@ def initialize_cameras(setup_state):
             camera_id = cam['id']
             cameras[slug] = {
                 'name': name,
-                'detection_enabled': enable_detection,
                 'pid_x': pid_x,
                 'pid_y': pid_y,
                 'controllable': controllable,
@@ -57,7 +55,6 @@ def initialize_cameras(setup_state):
             port = cam["port"]
             cameras[slug] = {
                 'name': name,
-                'detection_enabled': enable_detection,
                 'pid_x': pid_x,
                 'pid_y': pid_y,
                 'controllable': controllable,
@@ -112,15 +109,33 @@ def detections_video_feed(camera_id):
     try:
         camera = cameras[camera_id]
 
+        args = request.args
+
+        resolution_key = args.get('res', '480')
+
+        switch = {
+            '144': (256, 144),
+            '240': (426, 240),
+            '360': (640, 360),
+            '480': (854, 480),
+            '720': (1280, 720),
+            '1080': (1920, 1080)
+        }
+
+        resolution = switch.get(resolution_key, None)
+
+        if (resolution is None):
+            return Response(status=400)
+
+
+
         latest_detections = camera['system'].get_latest_detections_frame()
 
         if latest_detections is None:
             return Response(status=503)
 
-        return Response(generate_responses(cameras[camera_id]['system'].get_latest_detections_frame),
+        return Response(generate_responses(lambda : cv2.resize(cameras[camera_id]['system'].get_latest_detections_frame(), dsize=resolution, interpolation=cv2.INTER_AREA) ),
                         mimetype='multipart/x-mixed-replace; boundary=frame')
 
     except KeyError:
         return Response("Camera not found", status=404)
-    except RuntimeError:
-        return Response("Detector for this camera disabled", status=404)
