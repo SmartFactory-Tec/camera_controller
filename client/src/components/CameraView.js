@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 
 export default function CameraView(props) {
     return <Box>
-        <Image src={props.streamSource}/>
+        <Image src={props.streamSource} fit='contain'/>
         <Box direction='row' justify='between'>
             <Heading level='2'>
                 <Anchor label={props.cameraName}
