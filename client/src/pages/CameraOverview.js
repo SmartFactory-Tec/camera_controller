@@ -27,7 +27,7 @@ export default function CameraOverview() {
                     {
                         data.body.map((cameraInfo) => {
                             return <CameraView cameraName={cameraInfo.name} slug={cameraInfo.slug}
-                                               streamSource={'/api/camera/' + cameraInfo.slug + '/video_feed'}/>
+                                               streamSource={'/api/camera/' + cameraInfo.slug + '/video_feed?res=240'}/>
                         })
                     }
                 </Grid>

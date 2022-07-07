@@ -5,13 +5,13 @@ import {Link} from 'react-router-dom';
 import PropTypes from 'prop-types';
 
 export default function CameraView(props) {
-    return <Box>
+    return <Box fill='horizontal'>
         <Image src={props.streamSource} fit='contain'/>
         <Box direction='row' justify='between'>
             <Heading level='2'>
                 <Anchor label={props.cameraName}
                         as={Link}
-                        to={'/cameras/' + props.slug}/>
+                        to={'/camera/' + props.slug}/>
             </Heading>
             <Button icon={<Icons.Expand/>} secondary></Button>
         </Box>
