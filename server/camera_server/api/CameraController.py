@@ -4,7 +4,7 @@ from camera_server.api import Camera
 
 
 class CameraController:
-    def __init__(self, camera: Camera, x_pid: tuple[float, float, float], y_pid: tuple[float, float, float], x_deadzone = 0.2, y_deadzone = 0.2):
+    def __init__(self, camera, x_pid, y_pid, x_deadzone = 0.2, y_deadzone = 0.2):
         self.__x_error = 0
         self.__y_error = 0
 

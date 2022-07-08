@@ -23,13 +23,13 @@ class PersonDetector:
         self.__thread.daemon = True
         self.__thread.start()
 
-    def register_frame_source(self, frame_source: Callable[[], np.ndarray | None]) -> int:
+    def register_frame_source(self, frame_source):
         self.__frame_sources.append(frame_source)
         self.__boxes_c.append([])
         self.__weights_c.append([])
         return len(self.__frame_sources) - 1
 
-    def get_detections(self, id: int):
+    def get_detections(self, id):
         with self.__detections_lock:
             boxes = self.__boxes_c[id]
             weights = self.__weights_c[id]
