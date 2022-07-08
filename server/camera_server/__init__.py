@@ -9,7 +9,8 @@ import yappi
 import atexit
 
 def create_app():
-    app = Flask("server", instance_relative_config=True)
+    app = Flask("server", instance_relative_config=True,static_url_path='',
+            static_folder='../client/build/')
 
     try:
         makedirs(app.instance_path)
@@ -26,6 +27,10 @@ def create_app():
         pass
 
     app.config.update(settings)
+
+    @app.route('/')
+    def index():
+        return app.send_static_file('index.html')
 
     import camera_server.api
 
