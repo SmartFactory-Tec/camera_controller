@@ -10,9 +10,9 @@ from camera_server.api.utility import draw_detection_boxes, calculate_target_pos
 
 class CameraSystem():
     def __init__(self, pid_x: tuple[float, float, float],
-                 pid_y: tuple[float, float, float], detector, controllable: bool, id: int | None = None,
-                 address: str | None = None, port: int | None = None, user: str | None = None,
-                 password: str | None = None):
+                 pid_y: tuple[float, float, float], detector, controllable, id = None,
+                 address = None, port = None, user = None,
+                 password = None):
 
         self.__id = id
 

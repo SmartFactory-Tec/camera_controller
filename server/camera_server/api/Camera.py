@@ -6,8 +6,8 @@ import re
 
 
 class Camera:
-    def __init__(self, address: str | None = None, port: int | None = None, user: str | None = None,
-                 password: str | None = None, id: int | None = None):
+    def __init__(self, address = None, port = None, user = None,
+                 password = None, id = None):
         if id is not None:
             self.__stream = cv2.VideoCapture(id)
             self.__onvif_camera = None
