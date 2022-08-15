@@ -1,9 +1,9 @@
 from copy import deepcopy
 from typing import Callable
-
+import time
 import cv2
 import torch
-from threading import Thread, Lock, Event, local
+from threading import Thread, Lock, local
 import numpy as np
 
 class PersonDetector:
@@ -15,7 +15,7 @@ class PersonDetector:
 
         self.__detections_lock = Lock()
 
-        self.__model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+        self.__model = torch.hub.load('ultralytics/yolov5', 'yolov5n', pretrained=True)
 
         self.__frame_sources: [Callable[[], np.ndarray | None]] = []
 
@@ -27,6 +27,7 @@ class PersonDetector:
         self.__frame_sources.append(frame_source)
         self.__boxes_c.append([])
         self.__weights_c.append([])
+
         return len(self.__frame_sources) - 1
 
     def get_detections(self, id):
@@ -38,6 +39,7 @@ class PersonDetector:
     def __update(self):
         data = local()
         while True:
+            start = time.time()
             # Don't do anything until there are frame sources
             if len(self.__frame_sources) == 0:
                 continue
@@ -61,11 +63,13 @@ class PersonDetector:
                 h = (people_detected['ymax'] - people_detected['ymin']).tolist()
 
                 for box_idx  in range(len(x)):
-                    x[box_idx] = int(x[box_idx] / 0.4)
-                    y[box_idx] = int(y[box_idx] / 0.4)
-                    w[box_idx] = int(w[box_idx] / 0.4)
-                    h[box_idx] = int(h[box_idx] / 0.4)
+                    x[box_idx] = int(x[box_idx] / 0.5)
+                    y[box_idx] = int(y[box_idx] / 0.5)
+                    w[box_idx] = int(w[box_idx] / 0.5)
+                    h[box_idx] = int(h[box_idx] / 0.5)
 
                 with self.__detections_lock:
                     self.__boxes_c[idx] = list(zip(x, y, w, h))
                     self.__weights_c[idx] = people_detected['confidence'].tolist()
+
+            print(time.time() - start)

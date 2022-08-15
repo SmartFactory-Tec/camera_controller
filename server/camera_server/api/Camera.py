@@ -6,8 +6,8 @@ import re
 
 
 class Camera:
-    def __init__(self, address = None, port = None, user = None,
-                 password = None, id = None):
+    def __init__(self, address=None, port=None, user=None,
+                 password=None, id=None):
         if id is not None:
             self.__stream = cv2.VideoCapture(id)
             self.__onvif_camera = None
@@ -17,6 +17,16 @@ class Camera:
             self.__media = self.__onvif_camera.create_media_service()
             self.__ptz = self.__onvif_camera.create_ptz_service()
             self.__media_profile = self.__media.GetProfiles()[0]
+
+            request = self.__ptz.create_type('GetConfigurations')
+
+            token = self.__ptz.GetConfigurations(request)[0].token
+
+            request = self.__ptz.create_type('GetConfigurationOptions')
+
+            request.ConfigurationToken = token
+
+            print(self.__ptz.GetStatus({"ProfileToken": self.__media_profile.token}))
 
             uri_request = self.__media.create_type('GetStreamUri')
             uri_request.StreamSetup = {
@@ -77,7 +87,7 @@ class Camera:
                 'y': 0.5,
             }
         }
-        self.__ptz.RelativeMove(request)
+        # self.__ptz.RelativeMove(request)
 
     def set_speed(self, pan: float, tilt: float):
         request = self.__ptz.create_type('ContinuousMove')
@@ -93,7 +103,7 @@ class Camera:
                 'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace',
             },
         }
-        self.__ptz.ContinuousMove(request)
+        # self.__ptz.ContinuousMove(request)
 
     def stop_movement(self):
         request = self.__ptz.create_type('Stop')
