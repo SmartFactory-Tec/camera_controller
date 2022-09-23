@@ -1,0 +1,8 @@
+
+
+import toml
+
+camerasettings = toml.load("CameraSettings.toml")
+
+for 
+

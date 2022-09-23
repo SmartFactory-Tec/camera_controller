@@ -103,7 +103,7 @@ class Camera:
                 'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace',
             },
         }
-        # self.__ptz.ContinuousMove(request)
+        self.__ptz.ContinuousMove(request)
 
     def stop_movement(self):
         request = self.__ptz.create_type('Stop')

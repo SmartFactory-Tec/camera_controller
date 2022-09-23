@@ -1,0 +1,35 @@
+[camera1]
+address = "10.22.240.53"
+password = "L2793C70"
+port = 80
+user = "admin"
+controllable = true
+pid_x = [0.45,0.01,0.05]
+pid_y  = [0.3,0.01,0.0]
+
+[camera2]
+address = "10.22.240.56"
+password = "L2321800"
+port = 80
+user = "admin"
+controllable = true
+pid_x = [0.45,0.01,0.05]
+pid_y = [0.3,0.01,0.0]
+#
+#[camera3]
+#address = "10.22.240.53"
+#password = "L2793C70"
+#port = 50
+#user = "admin"
+#controllable = true
+#pid_x = [1,0,0]
+#pid_y = [1,0,0]
+#
+#[camera4]
+#address = "10.22.240.53"
+#password = "L2793C70"
+#port = 50
+#user = "admin"
+#controllable = true
+#pid_x = [1,0,0]
+#pid_y = [1,0,0]

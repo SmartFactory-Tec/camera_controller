@@ -2,17 +2,17 @@ import cv2
 from threading import Thread, Lock, Event
 from typing import TypedDict
 from copy import deepcopy
-from camera_server.api import Camera
-from camera_server.api.CameraController import CameraController
-from camera_server.api.PersonDetector import PersonDetector
-from camera_server.api.utility import draw_detection_boxes, calculate_target_position
+from Camera import Camera
+from CameraController import CameraController
+from PersonDetector import PersonDetector
+from utility import draw_detection_boxes, calculate_target_position
 
 
 class CameraSystem():
     def __init__(self, pid_x: tuple[float, float, float],
                  pid_y: tuple[float, float, float], detector, controllable, id = None,
                  address = None, port = None, user = None,
-                 password = None):
+                 password = None): 
 
         self.__id = id
 
