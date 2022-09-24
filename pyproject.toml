@@ -1,3 +1,4 @@
+@ -1,42 +0,0 @@
 [tool.poetry]
 name = "server"
 version = "0.1.0"
