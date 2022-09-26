@@ -1,9 +1,8 @@
-@ -1,42 +0,0 @@
 [tool.poetry]
 name = "server"
-version = "0.1.0"
+version = "1.0.0"
 description = "Smart Factory Camera Server"
-authors = ["Hiram Muñoz <hirammunozr@outlook.com>"]
+authors = ["Hiram Muñoz <hirammunozr@outlook.com>", "Sergio Fabricio Vargas"]
 
 [tool.poetry.dependencies]
 python = ">=3.9, <3.11"
@@ -26,17 +25,17 @@ ipython = "^8.4.0"
 psutil = "^5.9.1"
 thop = "^0.1.0"
 ipywidgets = "^7.7.0"
-torch = "^1.12.0"
-torchvision = "^0.13.0"
-
-[tool.poetry.dev-dependencies]
-yappi = "^1.3.5"
+torch = {version = "^1.12.1", source = "pytorch"}
+torchvision = {version = "^0.13.1+cu116", source = "pytorch"}
 
 [[tool.poetry.source]]
 name = "pytorch"
-url = "https://download.pytorch.org/whl/cu113"
+url = "https://download.pytorch.org/whl/cu116"
 default = false
-secondary = false
+secondary = true
+
+[tool.poetry.dev-dependencies]
+yappi = "^1.3.5"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
